@@ -1,1 +1,0 @@
-# kepler-ai-teacher
