@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>克卜勒 AI 教師</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Noto+Serif+TC:wght@400;600;800&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an astronomer's workbench — portrait & dossier on the left, conversation on the right, the laws as an instrument below. */
+:root{
+  --bg:#eef0f2; --paper:#f8f8f6; --ink:#1d2430; --muted:#5b6474; --line:#d4d8de;
+  --brass:#9a6a1c; --brass-soft:#f1e6cf; --night:#1b2333; --sweep-a:rgba(154,106,28,.22); --sweep-b:rgba(60,90,140,.16);
+  --me:#e4e9f1;
+  --f-display:"IM Fell English SC","Noto Serif TC",Georgia,serif;
+  --f-serif:"Noto Serif TC","Songti TC",serif;
+  --f-sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11161f; --paper:#181f2b; --ink:#e7e4dc; --muted:#9aa3b2; --line:#2c3545;
+  --brass:#d6a54e; --brass-soft:#2c2618; --night:#0b0f17; --sweep-a:rgba(214,165,78,.25); --sweep-b:rgba(120,150,210,.18);
+  --me:#243046; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161f; --paper:#181f2b; --ink:#e7e4dc; --muted:#9aa3b2; --line:#2c3545;
+  --brass:#d6a54e; --brass-soft:#2c2618; --night:#0b0f17; --sweep-a:rgba(214,165,78,.25); --sweep-b:rgba(120,150,210,.18);
+  --me:#243046; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-sans);font-size:15px;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:grid;gap:28px}
+header.top{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.latin{font-family:var(--f-display);color:var(--brass);letter-spacing:.06em;font-size:15px}
+header.top h1{margin:0;font-family:var(--f-serif);font-weight:800;font-size:clamp(22px,3vw,30px);text-wrap:balance}
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+/* dossier */
+.dossier{display:grid;gap:18px}
+.portrait{margin:0;position:relative}
+.portrait img{display:block;width:100%;border-radius:4px;border:1px solid var(--line)}
+.portrait figcaption{font-size:12px;color:var(--muted);margin-top:6px}
+.name{font-family:var(--f-serif);font-size:24px;font-weight:800;margin:0}
+.name small{display:block;font-family:var(--f-display);font-weight:400;font-size:16px;color:var(--brass);letter-spacing:.04em}
+dl.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:14px}
+dl.facts dt{color:var(--muted);letter-spacing:.08em;font-size:12px;padding-top:2px}
+dl.facts dd{margin:0}
+.label{font-size:12px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin:0 0 8px}
+ol.timeline{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:14px}
+ol.timeline li{display:grid;grid-template-columns:44px 1fr;gap:10px}
+ol.timeline b{font-family:var(--f-mono);font-weight:500;color:var(--brass);font-variant-numeric:tabular-nums}
+
+/* chat */
+.chat{background:var(--paper);border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;min-height:620px;max-height:80vh;min-width:0}
+.chat-head{display:flex;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.chat-head img{width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:50% 18%;border:2px solid var(--brass)}
+.chat-head h2{margin:0;font-family:var(--f-serif);font-size:17px}
+.chat-head p{margin:0;font-size:12px;color:var(--muted)}
+.mode{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-shrink:0}
+.mode button{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;padding:5px 12px;cursor:pointer}
+.mode button[aria-pressed="true"]{background:var(--brass);color:var(--paper)}
+.log{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+.msg{max-width:86%;padding:10px 14px;border-radius:10px;white-space:normal;overflow-wrap:anywhere}
+.msg.k{align-self:flex-start;background:var(--brass-soft);border-top-left-radius:2px;font-family:var(--f-serif)}
+.msg.u{align-self:flex-end;background:var(--me);border-top-right-radius:2px}
+.msg.sys{align-self:center;font-size:13px;color:var(--muted);background:none;text-align:center}
+.msg p{margin:0 0 .5em}.msg p:last-child{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 10px}
+.chip{border:1px solid var(--brass);color:var(--brass);background:none;border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
+.chip:hover{background:var(--brass-soft)}
+form.ask{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+form.ask textarea{flex:1;min-width:0;resize:none;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit;padding:9px 12px;height:46px}
+.btn{border:0;border-radius:6px;background:var(--brass);color:var(--paper);font:inherit;font-weight:700;padding:0 18px;cursor:pointer}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:none;color:var(--muted);border:1px solid var(--line);font-weight:400}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+
+/* laws */
+section.laws{display:grid;gap:18px}
+section.laws h2{font-family:var(--f-serif);font-size:22px;margin:0}
+.law-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:860px){.law-grid{grid-template-columns:minmax(0,1fr)}}
+.law{border-top:2px solid var(--brass);padding-top:10px}
+.law h3{margin:0 0 4px;font-family:var(--f-serif);font-size:16px}
+.law .yr{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.law p{margin:6px 0 0;font-size:14px}
+.instrument{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.instrument{grid-template-columns:minmax(0,1fr)}}
+.orbit{background:var(--night);border-radius:6px;padding:12px;display:grid;gap:10px}
+.orbit canvas{width:100%;aspect-ratio:16/10;max-width:100%;display:block}
+.orbit .ctl{display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:#cfd6e2;font-size:13px}
+.orbit input[type=range]{flex:1;min-width:120px;accent-color:#d6a54e}
+.orbit output{font-family:var(--f-mono)}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.06em}
+td.r{font-family:var(--f-mono);color:var(--brass);font-weight:500}
+.note{font-size:13px;color:var(--muted);margin:8px 0 0}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>克卜勒 AI 教師</h1>
+    <span class="latin">Mathematicus Cæsareus · 天體運動的立法者</span>
+  </header>
+
+  <div class="grid">
+    <aside class="dossier">
+      <figure class="portrait">
+        <img id="portrait" src="kepler.jpg" alt="克卜勒站在書房中，身旁有天球儀、渾天儀與望遠鏡">
+        <figcaption>克卜勒書房情境插畫</figcaption>
+      </figure>
+      <div>
+        <p class="name">約翰尼斯·克卜勒<small>Johannes Kepler</small></p>
+      </div>
+      <dl class="facts">
+        <dt>生卒</dt><dd>1571.12.27 – 1630.11.15</dd>
+        <dt>出生地</dt><dd>神聖羅馬帝國 魏爾德斯塔特（今德國）</dd>
+        <dt>身分</dt><dd>天文學家、數學家、光學家；魯道夫二世的帝國數學家</dd>
+        <dt>師承</dt><dd>在杜賓根大學隨梅斯特林學習哥白尼日心說</dd>
+        <dt>合作</dt><dd>繼承第谷·布拉赫二十餘年的肉眼觀測資料</dd>
+        <dt>代表作</dt><dd>《新天文學》《世界的和諧》《魯道夫星表》</dd>
+      </dl>
+      <div>
+        <p class="label">生平年表</p>
+        <ol class="timeline">
+          <li><b>1589</b><span>進入杜賓根大學，接觸哥白尼學說</span></li>
+          <li><b>1594</b><span>赴奧地利格拉茨擔任數學教師</span></li>
+          <li><b>1596</b><span>出版《宇宙的奧祕》，以五種正多面體解釋行星間距</span></li>
+          <li><b>1600</b><span>到布拉格成為第谷的助手，開始研究火星軌道</span></li>
+          <li><b>1601</b><span>第谷去世，繼任帝國數學家</span></li>
+          <li><b>1604</b><span>觀測並記錄一顆新星（今稱克卜勒超新星）</span></li>
+          <li><b>1609</b><span>《新天文學》提出第一、第二定律</span></li>
+          <li><b>1611</b><span>《屈光學》，設計以兩片凸透鏡組成的克卜勒式望遠鏡</span></li>
+          <li><b>1619</b><span>《世界的和諧》提出第三定律（調和定律）</span></li>
+          <li><b>1627</b><span>完成《魯道夫星表》，精度遠勝前人</span></li>
+          <li><b>1630</b><span>於雷根斯堡逝世</span></li>
+        </ol>
+      </div>
+    </aside>
+
+    <section class="chat" aria-label="與克卜勒對話">
+      <div class="chat-head">
+        <img src="" id="avatar" alt="">
+        <div>
+          <h2>克卜勒老師</h2>
+          <p id="status">在布拉格的書房等你提問 · 離線對話</p>
+        </div>
+        <div class="mode" role="group" aria-label="教學模式">
+          <button type="button" id="m-inq" aria-pressed="true">探究引導</button>
+          <button type="button" id="m-exp" aria-pressed="false">直接講解</button>
+        </div>
+      </div>
+      <div class="log" id="log" aria-live="polite"></div>
+      <div class="chips" id="chips"></div>
+      <form class="ask" id="ask">
+        <label for="q" hidden>你的問題</label>
+        <textarea id="q" placeholder="問克卜勒一個問題，例如：火星的軌道為什麼不是圓？"></textarea>
+        <button class="btn" id="send" type="submit">送出</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="laws" aria-labelledby="laws-h">
+    <h2 id="laws-h">行星運動三定律</h2>
+    <div class="law-grid">
+      <div class="law"><h3>第一定律・橢圓定律</h3><span class="yr">1609《新天文學》</span><p>行星繞太陽的軌道是橢圓，太陽位於橢圓的一個焦點上。</p></div>
+      <div class="law"><h3>第二定律・等面積定律</h3><span class="yr">1609《新天文學》</span><p>太陽到行星的連線，在相等時間內掃過相等面積。行星離太陽近時跑得快，遠時跑得慢。</p></div>
+      <div class="law"><h3>第三定律・週期定律</h3><span class="yr">1619《世界的和諧》</span><p>行星公轉週期的平方與軌道半長軸的立方成正比：T² ∝ a³。</p></div>
+    </div>
+    <div class="instrument">
+      <div class="orbit">
+        <canvas id="cv" aria-label="橢圓軌道與等時間掃過面積的動畫"></canvas>
+        <div class="ctl">
+          <label for="ecc">離心率 e</label>
+          <input type="range" id="ecc" min="0" max="0.85" step="0.01" value="0.6">
+          <output id="eccv">0.60</output>
+        </div>
+        <div class="ctl" style="font-size:12px;opacity:.8">每一塊扇形代表相同的時間（1/12 週期），面積都相等。</div>
+      </div>
+      <div>
+        <p class="label">用第谷時代已知的六顆行星驗證 T²/a³</p>
+        <div class="tablebox">
+          <table>
+            <thead><tr><th>行星</th><th>a（AU）</th><th>T（年）</th><th>T²/a³</th></tr></thead>
+            <tbody id="tb"></tbody>
+          </table>
+        </div>
+        <p class="note">以現代數值計算。比值都接近 1，這就是克卜勒在 1618 年 5 月發現的「和諧」。</p>
+        <button class="chip" type="button" id="ask-table" style="margin-top:12px">請克卜勒帶我分析這張表</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+document.getElementById('avatar').src = document.getElementById('portrait').src;
+
+/* ---------- Third-law table ---------- */
+const planets=[["水星",0.387,0.241],["金星",0.723,0.615],["地球",1.000,1.000],["火星",1.524,1.881],["木星",5.203,11.86],["土星",9.537,29.46]];
+document.getElementById('tb').innerHTML=planets.map(([n,a,T])=>`<tr><td>${n}</td><td>${a.toFixed(3)}</td><td>${T.toFixed(3)}</td><td class="r">${(T*T/(a*a*a)).toFixed(3)}</td></tr>`).join('');
+
+/* ---------- Orbit instrument ---------- */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),eIn=document.getElementById('ecc'),eOut=document.getElementById('eccv');
+let ecc=0.6,phase=0,last=performance.now();
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function solveE(M,e){let E=M;for(let i=0;i<12;i++)E-=(E-e*Math.sin(E)-M)/(1-e*Math.cos(E));return E}
+function pos(M,e,a,b){const E=solveE(M,e);return[a*(Math.cos(E)-e),b*Math.sin(E)]}
+function draw(){
+  const dpr=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const e=ecc,a=Math.min(w/2.3,h/(2.3*Math.sqrt(1-e*e))),b=a*Math.sqrt(1-e*e);
+  const cx=w/2+a*e,cy=h/2; // sun at focus, ellipse centered
+  const P=M=>{const[x,y]=pos(M,e,a,b);return[cx+x,cy-y]};
+  const N=12;
+  for(let k=0;k<N;k++){
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    for(let s=0;s<=30;s++){const[x,y]=P(2*Math.PI*(k+s/30)/N);ctx.lineTo(x,y)}
+    ctx.closePath();ctx.fillStyle=k%2?'rgba(120,150,210,.20)':'rgba(214,165,78,.26)';ctx.fill();
+  }
+  ctx.beginPath();ctx.ellipse(cx-a*e,cy,a,b,0,0,Math.PI*2);ctx.strokeStyle='rgba(231,228,220,.55)';ctx.lineWidth=1.2;ctx.stroke();
+  // empty focus
+  ctx.beginPath();ctx.arc(cx-2*a*e,cy,2.5,0,Math.PI*2);ctx.fillStyle='rgba(231,228,220,.5)';ctx.fill();
+  // sun
+  const g=ctx.createRadialGradient(cx,cy,0,cx,cy,14);g.addColorStop(0,'#fff3c4');g.addColorStop(.5,'#f2b544');g.addColorStop(1,'rgba(242,181,68,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,14,0,Math.PI*2);ctx.fill();
+  // planet
+  const[px,py]=P(phase);
+  ctx.strokeStyle='rgba(255,255,255,.7)';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);ctx.stroke();
+  ctx.fillStyle='#8fb6ff';ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(231,228,220,.75)';ctx.font='12px "Noto Sans TC",sans-serif';
+  ctx.fillText('太陽（焦點）',cx+10,cy+22);ctx.fillText('近日點',cx+a*(1-e)-38,cy-10);ctx.fillText('遠日點',cx-a*(1+e)+6,cy-10);
+}
+function tick(t){const dt=Math.min(.05,(t-last)/1000);last=t;if(!reduce)phase=(phase+dt*2*Math.PI/9)%(2*Math.PI);draw();requestAnimationFrame(tick)}
+eIn.addEventListener('input',()=>{ecc=+eIn.value;eOut.textContent=ecc.toFixed(2);draw()});
+phase=0.3;draw();requestAnimationFrame(tick);addEventListener('resize',draw);
+
+/* ---------- 克卜勒老師：離線對話引擎（不需 API，全部在瀏覽器內執行） ---------- */
+const has=(t,arr)=>arr.some(k=>t.includes(k));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+/* 引導式探究路徑：每一步有提問、正確關鍵字、常見迷思、提示與揭曉 */
+const PATHS={
+  ellipse:{
+    intro:'啊，這正是折磨了我將近六年的問題！我們一步一步來。',
+    steps:[
+      {ask:'先想像：如果火星的軌道是正圓，而太陽就在圓心，那麼火星到太陽的距離，在一年當中會怎麼變化？',
+       ok:['不變','不會變','固定','一樣','相同','相等','維持','恆定','沒變','都一樣'],
+       bad:[[['變大','變小','改變','會變','近','遠'],'嗯，再想想「圓」的定義：圓周上每一點到圓心的距離都是半徑。如果太陽在圓心，火星和太陽的距離會跟著位置改變嗎？']],
+       hint:'提示：圓周上的每一點，到圓心的距離都等於什麼？',
+       praise:'沒錯！正圓、太陽在圓心，距離就永遠等於半徑。',
+       reveal:'答案是：距離會固定不變，因為圓上每一點到圓心都是同一個半徑。'},
+      {ask:'可是第谷的觀測顯示，火星有時離太陽近、有時遠。我試過把太陽稍微移離圓心，最好的圓形模型仍和第谷的數據差了 8 弧分。既然距離會變，太陽應該在軌道的什麼位置？',
+       ok:['不在中心','不在圓心','偏','焦點','旁邊','不是中心','離開中心','一側'],
+       bad:[[['中心','圓心','正中間'],'如果太陽在正中間，距離就不會變了——這和第谷的數據矛盾。所以太陽應該在中心，還是偏離中心呢？']],
+       hint:'提示：距離有時近有時遠，代表太陽和軌道上各點的距離不相等，所以太陽不可能在正中心。',
+       praise:'對！太陽必須偏離中心。我最後發現，軌道是橢圓，而太陽正好位於橢圓的一個「焦點」上。',
+       reveal:'答案是：太陽偏離中心，位在橢圓的一個焦點上。'},
+      {ask:'現在請你到下方的動畫，把「離心率 e」拉到 0。你看到軌道變成什麼形狀？太陽又跑到哪裡？',
+       ok:['正圓','變圓','圓形','是圓','成圓','圓圈','圓心','中心','圓'],
+       bad:[[['扁','橢圓'],'再把滑桿往左拉到底試試，e = 0 的時候，軌道還扁嗎？']],
+       hint:'提示：離心率衡量橢圓有多「扁」。完全不扁的橢圓是什麼？',
+       praise:'正是如此！e = 0 時橢圓就變成圓，兩個焦點合而為一，就在圓心。所以圓只是橢圓的特例。',
+       reveal:'答案是：e = 0 時軌道變成正圓，太陽回到圓心——圓是橢圓的特例。'}
+    ],
+    end:'這就是我的第一定律：行星繞太陽的軌道是橢圓，太陽在其中一個焦點。火星的離心率約 0.09，比地球的 0.017 大得多，所以只有火星的數據能逼我放棄圓。\n\n最後考考你：地球軌道離心率這麼小，如果畫在紙上，肉眼看起來會像什麼形狀？'
+  },
+  area:{
+    intro:'好問題！請先看下方的動畫，每一塊顏色扇形代表「相同的時間」。',
+    steps:[
+      {ask:'觀察靠近太陽（近日點）和遠離太陽（遠日點）的扇形。如果每塊面積都相等，近日點附近的扇形，它外緣的弧長是比較長，還是比較短？',
+       ok:['長','寬','大','胖'],
+       bad:[[['短','窄','小'],'你注意到近日點的扇形「半徑短」了，很好。但面積要相等，半徑變短時，弧長得怎樣才能補回來？']],
+       hint:'提示：扇形面積大約是「半徑 × 弧長 ÷ 2」。半徑變小，面積又要一樣，弧長就得……？',
+       praise:'觀察得很好！半徑短，弧長就得長，面積才會相等。',
+       reveal:'答案是：近日點附近的扇形弧長比較長。'},
+      {ask:'弧長代表行星在同一段時間內走過的路程。那麼行星在近日點時，跑得比較快還是比較慢？',
+       ok:['快'],
+       bad:[[['慢'],'相同時間內走的路程比較長，代表速度是比較大還是比較小呢？']],
+       hint:'提示：速度 = 路程 ÷ 時間。時間相同，路程比較長……',
+       praise:'完全正確！行星離太陽近時快，遠時慢。',
+       reveal:'答案是：近日點時跑得比較快。'},
+      {ask:'來點生活應用：地球大約在每年 1 月初經過近日點，那時正是北半球的冬天。請推理看看：北半球的冬季（冬至到春分）比夏季（夏至到秋分）長，還是短？',
+       ok:['短','冬天短','冬季短','夏季長','夏天長'],
+       bad:[[['長'],'想想看，1 月時地球離太陽近、跑得比較快，走完那一段軌道需要的時間會比較多還是比較少？']],
+       hint:'提示：近日點附近地球跑得快，走完同樣角度需要的時間就……',
+       praise:'漂亮的推理！北半球冬季確實比夏季短了大約 4 到 5 天。',
+       reveal:'答案是：北半球的冬季比較短，因為那時地球靠近近日點、跑得快。'}
+    ],
+    end:'這就是我的第二定律：太陽到行星的連線，在相等時間內掃過相等面積。後來牛頓先生證明，這等價於「角動量守恆」——因為太陽的引力永遠指向太陽，不會讓行星「轉得更多或更少」。\n\n檢核一下：彗星的軌道非常扁，它在遠日點附近會停留很久，還是很快就經過？'
+  },
+  third:{
+    intro:'這是我最得意的發現！1618 年 5 月，我在一堆數字中終於看見了「和諧」。',
+    steps:[
+      {ask:'請看下方的表格。把每顆行星的週期平方 T² 除以半長軸立方 a³，你發現這些比值有什麼共同點？',
+       ok:['1','一','相同','一樣','接近','差不多','相等','固定','常數','定值'],
+       bad:[[['不同','不一樣','亂'],'再仔細看最右邊一欄，從水星到土星的數字，彼此差得多嗎？']],
+       hint:'提示：看表格最右邊「T²/a³」那一欄，它們都接近哪個數字？',
+       praise:'正是！六顆行星的 T²/a³ 都接近 1（用年和 AU 為單位時）。這就是 T² ∝ a³。',
+       reveal:'答案是：所有比值都接近 1，代表 T² 和 a³ 成正比。'},
+      {ask:'現在換你當天文學家：如果發現一顆小行星，軌道半長軸 a = 4 AU，它的公轉週期是幾年？',
+       ok:['8','八'],
+       bad:[[['16','十六'],'接近了！但 T² = a³ = 64，你要找的是 T 本身，不是 T²。'],[['64','六十四'],'64 是 T²！再開根號一次就是 T 了。'],[['12','十二'],'先算 a³ = 4 × 4 × 4 = ？然後 T 是它的平方根。']],
+       hint:'提示：T² = a³ = 4³ = 64，那 T = ？',
+       praise:'答對了！T² = 64，所以 T = 8 年。你剛剛做的，就是我當年想做卻沒有數據可做的預測。',
+       reveal:'答案是：T² = 4³ = 64，T = 8 年。'},
+      {ask:'最後一題：我當年只能說 T² 和 a³ 成正比，卻說不出「為什麼」。你覺得是什麼東西讓離太陽越遠的行星跑得越慢？',
+       ok:['引力','重力','吸引','拉力','太陽的力'],
+       bad:[[['摩擦','空氣','阻力'],'太空中幾乎沒有空氣喔。想想看，是什麼把行星「拉」著繞太陽轉？']],
+       hint:'提示：我曾猜想太陽發出某種「動力」推著行星，後來牛頓先生給了它一個名字。',
+       praise:'沒錯！是太陽的引力。距離越遠引力越弱，行星就繞得越慢、週期越長。',
+       reveal:'答案是：太陽的引力。離太陽越遠，引力越弱，行星就跑得越慢。'}
+    ],
+    end:'我在《世界的和諧》（1619）發表了這條第三定律。牛頓先生後來用萬有引力推出 T² = 4π²a³ / (GM)，所以比值只和太陽的質量有關——這也是為什麼六顆行星的比值都一樣。\n\n檢核一下：木星的衛星繞木星轉，它們的 T²/a³ 會和繞太陽的行星一樣嗎？為什麼？'
+  },
+  newton:{
+    intro:'這是我身後的牛頓先生解開的謎，但我很樂意陪你把兩者接起來。',
+    steps:[
+      {ask:'先想想：太陽對行星的引力，方向永遠指向哪裡？',
+       ok:['太陽','中心','焦點','中間'],
+       bad:[[['前','切線','運動方向'],'如果力沿著運動方向，行星只會一直加速往前衝。想想看，是什麼讓行星「轉彎」？力應該指向哪？']],
+       hint:'提示：引力是太陽「拉」行星，所以方向是從行星指向……？',
+       praise:'對！引力永遠指向太陽，這種力叫做「連心力」。',
+       reveal:'答案是：引力永遠指向太陽。'},
+      {ask:'力永遠指向太陽，就不會產生讓行星繞太陽「轉得更快或更慢」的力矩。沒有力矩時，哪個物理量會守恆？',
+       ok:['角動量'],
+       bad:[[['動量','能量','速度'],'接近了，但我們在談「轉動」。和轉動有關、在沒有力矩時保持不變的量是什麼？']],
+       hint:'提示：力矩改變的是「角」動量……',
+       praise:'正確！角動量守恆。而我的第二定律「相等時間掃過相等面積」，正是角動量守恆的幾何樣貌。',
+       reveal:'答案是：角動量守恆，它就是第二定律的物理原因。'},
+      {ask:'最後用圓軌道近似：引力提供向心力，GMm / r² = m · 4π²r / T²。你能把它整理一下，T² 會和 r 的幾次方成正比？',
+       ok:['3','三','立方','r³','r^3'],
+       bad:[[['2','二','平方'],'把式子兩邊同乘 r²·T²，再除以 GMm，看看 r 一共出現幾次方？']],
+       hint:'提示：整理後得到 T² = (4π² / GM) · r^?，數一數 r 的次方。',
+       praise:'漂亮！T² = (4π²/GM) r³，正是我的第三定律，而且比值只和太陽質量 M 有關。',
+       reveal:'答案是：T² = (4π²/GM)·r³，所以 T² 與 r³ 成正比。'}
+    ],
+    end:'所以，我的三條定律描述了行星「怎麼動」，牛頓先生的萬有引力和運動定律解釋了「為什麼這樣動」。第一定律對應平方反比的引力，第二定律對應角動量守恆，第三定律對應引力提供的向心力。\n\n檢核一下：如果太陽的質量變成兩倍，地球軌道不變，一年會變長還是變短？'
+  }
+};
+
+/* 知識庫：關鍵字 → 講解 */
+const KB=[
+  {id:'ellipse',path:'ellipse',kw:['火星','不是圓','橢圓','第一定律','軌道形狀','圓形','焦點','離心率','8弧分','八弧分','弧分'],
+   text:'第谷留下的火星數據非常精確，誤差只有約 2 弧分。我用圓形軌道反覆擬合，最好的結果仍差了 8 弧分。我不能忽略這 8 弧分，於是放棄了延續兩千年的「完美圓周」。\n\n最後我發現：行星的軌道是橢圓，太陽位在其中一個焦點，這就是我的第一定律（1609《新天文學》）。圓其實是離心率 e = 0 的特殊橢圓。',
+   check:'你可以把下方動畫的離心率拉到 0，看看太陽會跑到哪裡？'},
+  {id:'area',path:'area',kw:['面積','第二定律','等面積','速度','快','慢','近日點','遠日點','角動量'],
+   text:'我的第二定律說：太陽到行星的連線，在相等時間內掃過相等的面積。\n\n所以行星靠近太陽時，連線短，必須走得長、跑得快；遠離太陽時則跑得慢。地球在 1 月初最靠近太陽，那時跑得最快。後來牛頓先生證明，這就是角動量守恆。',
+   check:'理解檢核：在下方動畫中，行星在哪一點跑得最快？'},
+  {id:'third',path:'third',kw:['第三定律','週期','周期','調和','和諧定律','T²','t2','a³','a3','半長軸','數據找','表格','這張表'],
+   text:'第三定律是我在 1618 年 5 月發現的：行星公轉週期的平方與軌道半長軸的立方成正比，T² ∝ a³。以年和天文單位（AU）計算，T²/a³ 對每顆行星都約等於 1。\n\n例如木星 a ≈ 5.2 AU，T² ≈ 5.2³ ≈ 140，T ≈ 11.9 年，和觀測完全吻合。',
+   check:'理解檢核：如果一顆小行星的 a = 4 AU，它的週期是幾年？'},
+  {id:'newton',path:'newton',kw:['牛頓','萬有引力','引力','重力','向心力','為什麼'],
+   text:'牛頓先生在 1687 年出版《自然哲學的數學原理》，那是我身後的事了。他證明：如果太陽的引力和距離平方成反比，行星就會走橢圓軌道（第一定律）；引力指向太陽，角動量守恆（第二定律）；引力提供向心力，可推出 T² = 4π²a³/(GM)（第三定律）。\n\n我的定律描述「怎麼動」，他的力學解釋「為什麼」。',
+   check:'理解檢核：第二定律對應的是哪一個守恆定律？'},
+  {id:'laws',kw:['三大定律','三定律','三個定律','定律分別','所有定律','行星運動定律','你的定律'],
+   text:'我的三條行星運動定律是：\n\n**第一定律（橢圓定律）**：行星軌道是橢圓，太陽在一個焦點上。\n**第二定律（等面積定律）**：相等時間內，太陽與行星的連線掃過相等面積。\n**第三定律（週期定律）**：T² ∝ a³。\n\n前兩條發表於 1609 年《新天文學》，第三條發表於 1619 年《世界的和諧》。',
+   check:'理解檢核：哪一條定律告訴你行星在近日點跑得比較快？'},
+  {id:'self',kw:['介紹','你是誰','自己','生平','克卜勒是','你好嗎'],
+   text:'我是約翰尼斯·克卜勒，1571 年生於魏爾德斯塔特。我在杜賓根大學跟梅斯特林老師學到哥白尼的日心說，後來在格拉茨當數學教師。1600 年我來到布拉格當第谷·布拉赫的助手，1601 年他過世後，我繼任魯道夫二世的帝國數學家。\n\n我這一生最大的成就，是從第谷的數據中找出行星運動的三條定律。',
+   check:'你想先聽哪一條定律的故事？'},
+  {id:'tycho',kw:['第谷','布拉赫','tycho','觀測資料','數據','資料'],
+   text:'第谷·布拉赫是望遠鏡發明前最偉大的觀測家，他用巨大的象限儀累積了二十多年的肉眼觀測，精度可達約 2 弧分。\n\n沒有他的火星數據，我永遠不會發現那 8 弧分的差距，也就不會放棄圓形軌道。他過世前還囑咐我：「不要讓我的一生白費。」',
+   check:'想一想：如果數據誤差有 10 弧分，我還能發現軌道是橢圓嗎？'},
+  {id:'telescope',kw:['望遠鏡','屈光','透鏡','光學','眼睛','視網膜'],
+   text:'1611 年我寫了《屈光學》，設計出用兩片凸透鏡組成的望遠鏡，後人稱為「克卜勒式望遠鏡」。它看到的像是倒立的，但視野比伽利略用凸透鏡加凹透鏡的設計更寬，後來成為天文望遠鏡的主流。\n\n我也是第一個正確說明眼睛的成像落在視網膜上、而且是倒立的人。',
+   check:'理解檢核：克卜勒式望遠鏡的成像是正立還是倒立？'},
+  {id:'galileo',kw:['伽利略','木星衛星','galileo'],
+   text:'1610 年伽利略用望遠鏡發現木星的四顆衛星，我讀到他的《星際信使》後非常興奮，寫了一封長信支持他，後來也借到望遠鏡親自看到了這些衛星。「satellite（衛星）」這個詞就是我用的。\n\n可惜他始終不太接受我的橢圓軌道，仍然偏愛圓。',
+   check:'你覺得木星的衛星也會遵守 T² ∝ a³ 嗎？'},
+  {id:'supernova',kw:['超新星','新星','1604'],
+   text:'1604 年 10 月，天空中突然出現一顆比木星還亮的新星，我持續觀測了一年多，並寫成《蛇夫座足部的新星》。它的位置沒有視差，證明它在遙遠的恆星天球上——這讓「天界永恆不變」的舊觀念再受一擊。\n\n今天你們稱它為「克卜勒超新星」，是銀河系中最近一次肉眼可見的超新星。',
+   check:'想一想：為什麼沒有視差，就代表它非常遙遠？'},
+  {id:'mysterium',kw:['多面體','宇宙的奧祕','宇宙奧秘','正多面體','柏拉圖'],
+   text:'1596 年我出版《宇宙的奧祕》，提出六顆行星的軌道球殼之間，正好可以嵌入五種正多面體。那時我深信上帝依照幾何設計了宇宙。\n\n後來的數據證明這個模型並不精確，但正是這份「宇宙一定有數學秩序」的信念，驅使我去追尋三大定律。',
+   check:'你覺得一個錯誤的模型，對科學研究還有價值嗎？'},
+  {id:'rudolphine',kw:['魯道夫星表','星表','魯道夫'],
+   text:'1627 年我完成了《魯道夫星表》，以第谷的觀測和我的定律計算行星位置，精度比之前的星表好了將近 30 倍。我還用上了納皮爾剛發明的對數來簡化計算。\n\n1631 年水星凌日就是依靠這份星表預測的，可惜我已來不及親眼看見。',
+   check:'想一想：一個理論好不好，可以用什麼方法檢驗？'},
+  {id:'harmony',kw:['世界的和諧','和諧','音樂','音階'],
+   text:'在 1619 年的《世界的和諧》中，我把行星在近日點和遠日點的角速度比，和音樂的音程相比，彷彿每顆行星都在唱一段旋律。\n\n這本書裡最重要的，是我在 1618 年 5 月發現的第三定律 T² ∝ a³——對我而言，這就是宇宙和諧最美的證據。',
+   check:'你想試試用下方的表格驗證第三定律嗎？'},
+  {id:'copernicus',kw:['哥白尼','日心','地心','托勒密'],
+   text:'托勒密的地心說用許多本輪解釋行星逆行；哥白尼把太陽放到中心，讓逆行變得自然，但他仍用圓形軌道和本輪。\n\n我是最早公開捍衛日心說的天文學家之一，而我的橢圓軌道讓日心說第一次在精度上真正勝過地心說。',
+   check:'想一想：在日心說中，火星為什麼看起來會「逆行」？'},
+  {id:'mother',kw:['母親','媽媽','女巫','審判'],
+   text:'這是我人生最艱難的時期之一。1615 年起，我的母親卡塔琳娜被控行巫術，我放下研究，親自為她辯護多年，最後在 1621 年讓她獲釋。\n\n那是一個迷信與恐懼盛行的時代，我更相信理性與證據的力量。',
+   check:'你覺得科學精神在面對謠言時能發揮什麼作用？'},
+  {id:'eccentric',kw:['地球軌道','地球的軌道','季節','冬天','夏天'],
+   text:'地球軌道的離心率只有約 0.017，非常接近圓。地球 1 月初最靠近太陽，7 月初最遠，但距離只差約 3%。\n\n所以季節主要不是距離造成的，而是地軸傾斜約 23.5 度，讓太陽直射的位置在南北回歸線之間移動。',
+   check:'理解檢核：南半球 1 月是夏天還是冬天？這能說明什麼？'}
+];
+
+const GREET=['你好','嗨','哈囉','hi','hello','早安','午安','晚安'];
+const THANKS=['謝謝','感謝','thank','3q'];
+const GIVEUP=['不知道','不會','不懂','想不到','沒頭緒','不確定','不曉得','?','？？'];
+const TELLME=['直接告訴','告訴我答案','給我答案','直接說','公布答案','答案是什麼'];
+const STOP=['換個問題','換話題','不想','結束','算了','跳過'];
+
+let mode='inq',busy=false,cur=null; // cur = {path, step, tries}
+const log=document.getElementById('log'),chips=document.getElementById('chips'),q=document.getElementById('q'),send=document.getElementById('send'),status=document.getElementById('status');
+const STARTERS={
+  inq:["火星的軌道為什麼不是圓？","面積定律代表行星速度怎麼變？","你怎麼從數據找到第三定律？","你的定律和牛頓有什麼關係？"],
+  exp:["介紹一下你自己","三大定律分別在說什麼？","第谷的資料有多重要？","克卜勒式望遠鏡是什麼？"]
+};
+
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function fmt(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').split(/\n{2,}/).map(p=>'<p>'+p.replace(/\n/g,'<br>')+'</p>').join('')}
+function bubble(cls,text){const d=document.createElement('div');d.className='msg '+cls;d.innerHTML=fmt(text);log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function renderChips(){chips.innerHTML='';STARTERS[mode].forEach(t=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t;b.onclick=()=>ask(t);chips.appendChild(b)})}
+function setMode(m){mode=m;cur=null;document.getElementById('m-inq').setAttribute('aria-pressed',m==='inq');document.getElementById('m-exp').setAttribute('aria-pressed',m==='exp');renderChips();
+  bubble('sys',m==='inq'?'已切換為「探究引導」：克卜勒會用提問帶你一步步推理。':'已切換為「直接講解」：克卜勒會直接說明概念。')}
+document.getElementById('m-inq').onclick=()=>setMode('inq');
+document.getElementById('m-exp').onclick=()=>setMode('exp');
+
+function norm(t){return t.toLowerCase().replace(/\s+/g,'').replace(/[，。！、；：]/g,'')}
+function findTopic(t){let best=null,score=0;for(const k of KB){let s=0;for(const w of k.kw)if(t.includes(w.toLowerCase()))s+=w.length>2?2:1;if(s>score){score=s;best=k}}return score>0?best:null}
+function looksLikeNewQuestion(t,topic){return topic&&topic.path!==(cur&&cur.path)&&(/[?？嗎呢什麼為何怎]/.test(t)||t.length>14)}
+
+function startPath(id){cur={path:id,step:0,tries:0};const p=PATHS[id];return p.intro+'\n\n'+p.steps[0].ask}
+function advance(prefix){const p=PATHS[cur.path];cur.step++;cur.tries=0;
+  if(cur.step>=p.steps.length){cur=null;return prefix+'\n\n'+p.end}
+  return prefix+'\n\n'+p.steps[cur.step].ask}
+
+function reply(raw){
+  const t=norm(raw);
+  // 進行中的探究
+  if(cur){
+    const p=PATHS[cur.path],st=p.steps[cur.step];
+    if(has(t,TELLME)){const r=st.reveal;return advance(r+' 我們繼續。')}
+    if(has(t,STOP)){cur=null;return '沒問題，我們先把這個問題放在書桌上。你想聊什麼別的？可以點下方的問題。'}
+    const topic=findTopic(t);
+    if(looksLikeNewQuestion(t,topic)&&!has(t,st.ok)){cur=null;return answerTopic(topic)}
+    const okM=st.ok.filter(k=>t.includes(k)),badM=st.bad.flatMap(([kw])=>kw).filter(k=>t.includes(k));
+    const badWins=badM.some(b=>okM.some(o=>b!==o&&b.includes(o))&&!okM.some(o=>o.includes(b)));
+    if(okM.length&&!badWins)return advance(st.praise);
+    for(const [kw,msg] of st.bad){if(has(t,kw)){cur.tries++;if(cur.tries>=3)return advance(st.reveal+' 沒關係，這一步我當年也卡了很久。');return msg}}
+    cur.tries++;
+    if(cur.tries>=3)return advance(st.reveal+' 這一步不容易，我們繼續往下。');
+    if(has(t,GIVEUP)||cur.tries===2)return st.hint;
+    return pick(['嗯，我想先確認你的想法。','這個角度很有意思，不過我們先聚焦在剛剛的問題。','讓我把問題說得更清楚一點。'])+'\n\n'+st.ask;
+  }
+  if(has(t,GREET)&&t.length<8)return '你好，年輕的學者！在布拉格的書房見到你真高興。你想從火星的軌道、等面積定律，還是週期與距離的和諧關係開始？';
+  if(has(t,THANKS))return '不客氣！能和你一起探究天空的秩序，是我的榮幸。還有什麼想問的嗎？';
+  const topic=findTopic(t);
+  if(topic)return answerTopic(topic);
+  return '這個問題超出了我這間書房的藏書範圍，我不想捏造答案給你。\n\n我最能和你聊的是：行星運動三定律、火星軌道、第谷的觀測、第三定律的數據、望遠鏡與光學、1604 年超新星，以及我的定律和牛頓力學的關係。換個方式問問看吧！';
+}
+function answerTopic(topic){
+  if(mode==='inq'&&topic.path)return startPath(topic.path);
+  return topic.text+'\n\n'+topic.check;
+}
+
+bubble('k','你好，年輕的學者！我是約翰尼斯·克卜勒。為了火星那條不肯變成圓的軌道，我和第谷留下的數據搏鬥了將近六年。\n\n你今天想一起探究什麼？可以點下方的問題，或直接寫下你的疑問。');
+renderChips();
+
+function ask(text){
+  text=text.trim();if(!text||busy)return;
+  busy=true;send.disabled=true;q.value='';
+  bubble('u',text);
+  const full=reply(text);
+  const out=bubble('k','…');status.textContent='克卜勒正在思考…';
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let i=0;const step=()=>{i=Math.min(full.length,i+3);out.innerHTML=fmt(full.slice(0,i));log.scrollTop=log.scrollHeight;
+    if(i<full.length)setTimeout(step,18);else{busy=false;send.disabled=false;status.textContent='在布拉格的書房等你提問 · 離線對話';q.focus()}};
+  setTimeout(reduce?()=>{i=full.length-1;step()}:step,350);
+}
+document.getElementById('ask').addEventListener('submit',e=>{e.preventDefault();ask(q.value)});
+q.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();ask(q.value)}});
+document.getElementById('ask-table').onclick=()=>{cur=null;ask('請帶我分析 T²/a³ 這張表');document.querySelector('.chat').scrollIntoView({behavior:'smooth',block:'start'})};
+</script>
+</body>
+</html>
